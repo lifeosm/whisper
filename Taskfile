@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[ "${BASH_VERSINFO:-0}" -ge 4 ] || {
+  echo "bash version 4 or higher is required" >&2
+  exit 1
+}
+
+build() {
+  local version
+  version=$(
+    gh release view \
+      --repo openai/whisper \
+      --json tagName \
+      --jq '.tagName'
+  )
+  docker buildx build \
+    -f Dockerfile \
+    -t ghcr.io/lifeosm/whisper:"${version}" \
+    -t ghcr.io/lifeosm/whisper:latest \
+    .
+}
+
+clean() {
+  docker rmi "$(docker images -q -f dangling=true)" 2>/dev/null
+  docker system prune -f
+}
+
+connect() {
+  docker run --rm -it \
+    --entrypoint bash \
+    ghcr.io/lifeosm/whisper:latest
+}
+
+help() {
+  docker run --rm -it ghcr.io/lifeosm/whisper:latest --help
+}
+
+load() {
+  local model=${1:-small} memory
+  IFS=' ' read -r -a memory <<<"$(@size "${model}")"
+  docker run --rm -it \
+    "${memory[@]}" \
+    --entrypoint python \
+    -v whisper-models:/root/.cache/whisper \
+    ghcr.io/lifeosm/whisper:latest \
+      -c "import whisper; whisper.load_model('${model}')"
+}
+
+whisper() {
+  local model=small memory args=("${@}")
+  while [[ $# -gt 0 ]]; do
+    case "${1}" in
+    --model) model=${2} && shift 2 ;;
+    *) shift 1 ;;
+    esac
+  done
+  IFS=' ' read -r -a memory <<<"$(@size "${model}")"
+  docker run --rm -it \
+    "${memory[@]}" \
+    -v whisper-models:/root/.cache/whisper \
+    -v "$(pwd)":/usr/src \
+    ghcr.io/lifeosm/whisper:latest "${args[@]}"
+}
+
+@size() {
+  case "${1}" in
+  tiny|tiny.en) echo -m 1g ;;
+  base|base.en) echo -m 1g ;;
+  small|small.en) echo -m 2g ;;
+  medium|medium.en) echo -m 5g ;;
+  large) echo -m 10g ;;
+  *) echo "unknown size: ${1}" >&2 && exit 1 ;;
+  esac
+}
+
+@usage() {
+  cat - <<EOF
+Usage: $0 <task> <args>
+Tasks:
+EOF
+  compgen -A function | grep -Ev '^(@|_|-|\+)' | sort | cat -n
+}
+
+"${@:-@usage}"
