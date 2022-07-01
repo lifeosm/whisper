@@ -9,12 +9,7 @@ set -euo pipefail
 
 build() {
   local version
-  version=$(
-    gh release view \
-      --repo openai/whisper \
-      --json tagName \
-      --jq '.tagName'
-  )
+  version=$(@latest)
   docker buildx build \
     -f Dockerfile \
     -t ghcr.io/lifeosm/whisper:"${version}" \
@@ -62,6 +57,13 @@ whisper() {
     -v whisper-models:/root/.cache/whisper \
     -v "$(pwd)":/usr/src \
     ghcr.io/lifeosm/whisper:latest "${args[@]}"
+}
+
+@latest() {
+  gh release view \
+    --repo openai/whisper \
+    --json tagName \
+    --jq '.tagName'
 }
 
 @size() {
