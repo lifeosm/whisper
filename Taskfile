@@ -68,10 +68,10 @@ whisper() {
 
 @size() {
   case "${1}" in
-  tiny|tiny.en) echo -m 1g ;;
-  base|base.en) echo -m 1g ;;
-  small|small.en) echo -m 2g ;;
-  medium|medium.en) echo -m 5g ;;
+  tiny | tiny.en) echo -m 1g ;;
+  base | base.en) echo -m 1g ;;
+  small | small.en) echo -m 2g ;;
+  medium | medium.en) echo -m 5g ;;
   large) echo -m 10g ;;
   *) echo "unknown size: ${1}" >&2 && exit 1 ;;
   esac

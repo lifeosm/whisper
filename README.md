@@ -72,16 +72,31 @@ run load large
 run whisper -f json audio.mp3
 ```
 
+<details>
+  <summary>💼 Real example of usage</summary>
+
+Details are [here][example],
+
 ```bash
 whisper() {
   local model=small memory args=("${@}")
+
   while [[ $# -gt 0 ]]; do
     case "${1}" in
     --model) model=${2} && shift 2 ;;
     *) shift 1 ;;
     esac
   done
-  IFS=' ' read -r -a memory <<<"$(@size "${model}")"
+
+  case "${model}" in
+  tiny | tiny.en) memory=(-m 1g) ;;
+  base | base.en) memory=(-m 1g) ;;
+  small | small.en) memory=(-m 2g) ;;
+  medium | medium.en) memory=(-m 5g) ;;
+  large) memory=(-m 10g) ;;
+  *) echo "unknown size: ${model}" >&2 && return 1 ;;
+  esac
+
   docker run --rm -it \
     "${memory[@]}" \
     -v whisper-models:/root/.cache/whisper \
@@ -89,17 +104,16 @@ whisper() {
     ghcr.io/lifeosm/whisper:latest "${args[@]}"
 }
 
-@size() {
-  case "${1}" in
-  tiny|tiny.en) echo -m 1g ;;
-  base|base.en) echo -m 1g ;;
-  small|small.en) echo -m 2g ;;
-  medium|medium.en) echo -m 5g ;;
-  large) echo -m 10g ;;
-  *) echo "unknown size: ${1}" >&2 && exit 1 ;;
-  esac
+transcribe() {
+  whisper \
+    --model small \
+    --task transcribe \
+    --language ru \
+    -f vtt \
+    "${@}"
 }
 ```
+</details>
 
 ## Resources
 
@@ -113,4 +127,5 @@ whisper() {
 
 - https://hub.docker.com/r/liquidinvestigations/openai-whisper-gradio
 
-[models]: https://github.com/openai/whisper?tab=readme-ov-file#available-models-and-languages
+[models]:   https://github.com/openai/whisper?tab=readme-ov-file#available-models-and-languages
+[example]:  https://github.com/kamilsk/dotfiles/commit/dce0b935e6cb99473ae499e69394b99b45b837f1
