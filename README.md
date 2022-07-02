@@ -17,7 +17,7 @@ or build your own by
 docker build -t whisper:local .
 ```
 
-The image does not contain any models, so you need to download them first.
+The image contains no models, so you need to download them first.
 
 ```bash
 docker volume create whisper-models
@@ -30,7 +30,7 @@ docker run --rm -it \
 
 Full list of available models and languages can be found [here][models].
 
-With the model you car run a required command, e.g.,
+With the model, you can run a required command, e.g.,
 
 ```bash
 docker run --rm -it \
@@ -42,7 +42,7 @@ docker run --rm -it \
     audio.wav
 ```
 
-The full list of commands can be found here
+The complete list of commands can be found here
 
 ```bash
 docker run --rm -it ghcr.io/lifeosm/whisper:latest --help
